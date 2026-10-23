@@ -1,62 +1,117 @@
 # CSE4204-8A-T01-AI-Based-PPT-Slide-Generator
-### SlideGenius AI — 100% Free & Open-Source AI Presentation Generator
+### SlideGenius AI — Full AI Presentation Platform with Authentication & Vercel Deployment
 
-> An AI-powered presentation slide deck generator built for the **CSE4204/CSE4104** course. Inspired by modern SaaS presentation generators, re-architected to be **100% open-source, free, and executable on your local machine** with zero required paid cloud subscriptions.
-
----
-
-## 🌟 Key Highlights
-
-- **100% Free & Open Source**: Zero Clerk paywalls, zero Firebase quota limits, zero ImageKit watermarks.
-- **Dual-Mode AI Engine**: Supports direct **Google Gemini API** (free tier 60 req/min) AND a smart **offline/local generative engine** that works without any internet or API keys.
-- **Native .PPTX Export**: Exports real, editable Microsoft PowerPoint `.pptx` files with OpenXML shapes, formatted text boxes, background fills, and speaker notes via `pptxgenjs`.
-- **8 Curated Designer Themes**: Professional Blue, Minimal Clean, Modern Gradient, Elegant Dark, Creative Pastel, Startup Pitch, Cyberpunk Neon, and Nature Emerald.
-- **Interactive 16:9 Canvas Editor**: In-place text editing, layout switcher (Title, Split Narrative, 3-Card Grid, Metrics, Two-Column, Conclusion), slide reordering, and duplicate/delete.
-- **AI Slide Copilot**: Inline slide refinement assistant to make bullets punchier, add quantitative metrics, rephrase tone, or adjust structure.
-- **Fullscreen Presentation Mode**: In-browser slideshow with keyboard navigation (`ArrowRight`, `ArrowLeft`, `Space`, `Esc`), live timer, and collapsible speaker notes prompter.
-- **Step-by-Step Educational Curriculum**: 12 detailed chapters in the [`learnings/`](learnings/) folder covering everything from architecture to code implementation.
+> An AI-powered presentation slide deck generator built for the **CSE4204/CSE4104** course. Built with modern React 18, Vite, Tailwind CSS, multi-user authentication, client-side OpenXML `.pptx` export, and pre-configured for **instant one-click deployment on Vercel**.
 
 ---
 
-## 🛠️ Technology Stack
+## 🌟 Key Features
 
-- **Frontend**: React 18, Vite 6
-- **Styling**: Tailwind CSS, Lucide Icons, PostCSS
-- **Routing**: React Router DOM v6
-- **Exporting**: PptxGenJS (client-side OpenXML PPTX generator)
-- **AI Integration**: Google Gemini 1.5/2.0 Flash REST API + heuristic fallback engine
-- **Storage**: Browser LocalStorage & JSON export/import
+- **🔐 Multi-User Authentication**:
+  - Full **Sign In** and **Sign Up** system with salted SHA-256 password hashing.
+  - **⚡ One-Click Instant Demo Login**: Instant access as Alex Rivera (Product Lead) for evaluation.
+  - User-scoped workspaces: Each user has their own private presentation slide decks and automatically generated onboarding presentations.
+  - User Profile & Settings: Change display name, role, custom avatar, change password, and export full JSON data backups.
+- **☁️ 100% Vercel-Ready**:
+  - `vercel.json` included with single-page app (SPA) rewrites for direct routing to `/workspace`, `/login`, `/profile`, `/editor`, etc. without 404 errors.
+  - Automatic `VITE_GEMINI_API_KEY` environment variable pickup.
+  - Optimized Vite build with rollup manual chunks (`vendor`, `pptx`, `icons`).
+- **🤖 Dual-Mode AI Engine**:
+  - Google Gemini AI REST API integration (supports `gemini-3-flash-preview`, `gemini-2.0-flash`, etc.) with zero-config fallback.
+  - Heuristic generative AI engine that works without any internet or API keys.
+- **📑 Native .PPTX Export**:
+  - Exports real, editable Microsoft PowerPoint `.pptx` presentations with vector shapes, custom theme colors, structured card grids, and speaker notes via `pptxgenjs`.
+- **🎨 8 Curated Designer Themes**:
+  - Modern Gradient, Professional Blue, Minimal Clean, Elegant Dark, Creative Pastel, Startup Pitch, Cyberpunk Neon, and Nature Emerald.
+- **🖥️ 16:9 Interactive Canvas Editor**:
+  - In-place slide editing, layout switching (Title, Split Image, 3-Card Grid, Metrics, Two-Column, Conclusion), slide reordering, duplicating, and deleting.
+- **✨ AI Slide Copilot**:
+  - Inline prompt assistant to rewrite bullets, add metrics, shift tone, or simplify text on any active slide.
+- **📽️ Fullscreen Presenter Mode**:
+  - Slide presentation with keyboard shortcuts (`ArrowRight`, `ArrowLeft`, `Space`, `Esc`), timer, and presenter notes drawer.
 
 ---
 
-## 🚀 How to Run Locally
+## 🚀 How to Deploy on Vercel
 
-### 1. Prerequisites
-Ensure you have Node.js (v18 or v20+) and npm installed.
+This repository is fully configured for deployment on [Vercel](https://vercel.com).
+
+### Method 1: Deploy via Vercel Web Dashboard (Recommended)
+
+1. Push your repository to **GitHub** (e.g. `sourav739397/CSE4204-8A-T01-AI-Based-PPT-Slide-Generator`).
+2. Log into [Vercel](https://vercel.com) and click **"Add New..."** → **"Project"**.
+3. Import your GitHub repository.
+4. Vercel will automatically detect **Vite**:
+   - **Framework Preset**: `Vite`
+   - **Build Command**: `npm run build`
+   - **Output Directory**: `dist`
+   - **Install Command**: `npm install`
+5. *(Optional)* In **Environment Variables**, add:
+   - **Key**: `VITE_GEMINI_API_KEY`
+   - **Value**: Your Google Gemini API Key from [Google AI Studio](https://aistudio.google.com/app/apikey)
+   *(If not added, users can still enter their own key in Settings, or use the built-in Smart AI engine for free).*
+6. Click **Deploy**. Your site will be live on `https://your-project.vercel.app` in under 1 minute!
+
+### Method 2: Deploy via Vercel CLI
+
 ```bash
-node -v
-npm -v
+# 1. Install Vercel CLI globally
+npm install -g vercel
+
+# 2. Login to Vercel
+vercel login
+
+# 3. Deploy to preview
+vercel
+
+# 4. Deploy to production
+vercel --prod
 ```
 
-### 2. Install Dependencies
+### Why Vercel Deployment Works Out-of-the-Box:
+- **`vercel.json`**: Configured with SPA rewrite rules (`/(.*)` → `/index.html`) so refreshing routes like `/workspace` or `/profile` never throws a 404 error.
+- **Cache Headers**: Static assets under `/assets/` are automatically served with long-term immutable cache headers.
+- **Code Splitting**: Rollup `manualChunks` in `vite.config.js` keeps all bundle sizes under optimal limits.
+
+---
+
+## 🔑 Authentication & Demo Accounts
+
+Anyone can sign up with their own account, or use the pre-configured demo account:
+
+### Instant Demo Login:
+- On the `/login` page, simply click **"⚡ One-Click Instant Demo Login"**
+- Or manually sign in with:
+  - **Email**: `demo@slidegenius.ai`
+  - **Password**: `Password123!`
+
+### Creating a New Account:
+- Navigate to `/signup`
+- Enter **Full Name**, **Role**, **Email**, and a **Password** (min 6 characters)
+- A personalized starter presentation is automatically generated and added to your new workspace!
+
+---
+
+## 🛠️ Local Development
+
+### 1. Prerequisites
+- Node.js (v18 or v20+)
+- npm (v9+)
+
+### 2. Installation
 ```bash
+git clone https://github.com/sourav739397/CSE4204-8A-T01-AI-Based-PPT-Slide-Generator.git
+cd CSE4204-8A-T01-AI-Based-PPT-Slide-Generator
 npm install
 ```
 
-### 3. Start Development Server
+### 3. Run Development Server
 ```bash
 npm run dev
 ```
+Visit `http://localhost:3000` in your browser.
 
-Open your browser and navigate to:
-```
-http://localhost:3000
-```
-
-### 4. (Optional) Enter Google Gemini API Key
-Click on the **Settings icon** in the top navigation bar to enter your free Google Gemini API Key from [Google AI Studio](https://aistudio.google.com/app/apikey). If left empty, the app will automatically use the built-in generative engine.
-
-### 5. Production Build
+### 4. Build for Production
 ```bash
 npm run build
 npm run preview
@@ -64,29 +119,53 @@ npm run preview
 
 ---
 
-## 📚 Step-by-Step Learnings Curriculum
+## 📁 Project Structure
 
-Explore the comprehensive learning guides located in the [`learnings/`](learnings/) directory:
-1. [01. Architecture Overview](learnings/01-architecture-overview.md)
-2. [02. Project Setup & Tech Stack](learnings/02-project-setup-and-tech-stack.md)
-3. [03. Routing & Navigation](learnings/03-routing-and-navigation.md)
-4. [04. Workspace & Dashboard](learnings/04-workspace-and-dashboard.md)
-5. [05. AI Outline Generation](learnings/05-ai-outline-generation.md)
-6. [06. Theme & Design Systems](learnings/06-theme-and-design-system.md)
-7. [07. Slide Generation Engine](learnings/07-slide-generation-engine.md)
-8. [08. Canvas Editor & Inline AI](learnings/08-canvas-editor-and-inline-ai.md)
-9. [09. Presentation Mode](learnings/09-presentation-mode-and-keyboard-controls.md)
-10. [10. PPTX Export Implementation](learnings/10-pptx-export-implementation.md)
-11. [11. Local Storage & State Management](learnings/11-local-storage-and-state-management.md)
-12. [12. How to Run Locally](learnings/12-how-to-run-locally.md)
+```
+├── .env.example              # Environment variables template
+├── vercel.json               # Vercel SPA routing and cache headers
+├── vite.config.js            # Vite build configuration with manual chunks
+├── tailwind.config.js        # Theme colors and typography
+├── package.json
+├── src/
+│   ├── App.jsx               # App routing and AuthProvider
+│   ├── main.jsx              # React DOM entrypoint
+│   ├── index.css             # Tailwind CSS directives
+│   ├── context/
+│   │   └── AuthContext.jsx   # Authentication context & state provider
+│   ├── services/
+│   │   ├── authService.js    # User accounts, hashing, session management
+│   │   ├── storageService.js # LocalStorage & user-scoped presentations
+│   │   ├── aiService.js      # Gemini API + heuristic slide generator
+│   │   ├── pptxExportService.js # Microsoft PowerPoint .PPTX generation
+│   │   └── themeService.js   # 8 presentation design systems
+│   ├── pages/
+│   │   ├── LandingPage.jsx   # Homepage with feature showcases
+│   │   ├── AuthPage.jsx      # Sign In, Sign Up, and Password Reset
+│   │   ├── ProfilePage.jsx   # User profile, statistics, security
+│   │   ├── WorkspacePage.jsx # User presentations dashboard
+│   │   ├── OutlinePage.jsx   # AI outline generator and editor
+│   │   ├── EditorPage.jsx    # Interactive slide editor & copilot
+│   │   └── FreeFeaturesPage.jsx # Open-source feature breakdown
+│   └── components/
+│       ├── Navbar.jsx        # Navbar with user dropdown and auth state
+│       ├── Footer.jsx        # Footer links
+│       ├── SlideCanvas.jsx   # Real-time 16:9 canvas renderer
+│       ├── SettingsModal.jsx # Gemini API key configuration
+│       ├── LayoutSelector.jsx# Slide layout template selector
+│       ├── ThemeSelector.jsx # Designer color palettes
+│       ├── InlineAiModal.jsx # Inline AI assistant dialog
+│       └── PresentationModal.jsx # Slideshow presenter mode
+└── learnings/                # Educational documentation chapters
+```
 
 ---
 
 ## 📝 Course Assignment Verification: Week 8 AI Integration
 
-- **AI Content Generation**: Generates complete multi-slide outlines, detailed slide content, bullet points, and speaker notes based on user topics.
-- **Intelligent Prompt Engineering**: Strict JSON schemas with markdown delimiter cleaning preventing parse failures.
-- **Robust Error Handling**: Dual-mode architecture ensures graceful degradation: if Gemini encounters rate limits or network issues, the client-side generator immediately takes over without crashing.
+- **Authentication & User Management**: Multi-user registration, secure password hashing, and user-scoped presentation workspaces.
+- **End-to-End AI Generation**: Topic → Structured Outline → Multi-Slide Presentation Deck → PPTX Export.
+- **Production Deployment**: Validated production build with zero errors and turnkey Vercel configuration.
 
 ---
 

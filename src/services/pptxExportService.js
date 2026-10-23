@@ -1,5 +1,11 @@
 import pptxgen from 'pptxgenjs';
-import { getThemeById } from './themeService';
+import { getThemeById } from './themeService.js';
+
+// Standard OpenXML shape identifiers in pptxgenjs
+const ShapeType = {
+  rect: 'rect',
+  roundRect: 'roundRect'
+};
 
 export async function exportToPptx(project) {
   if (!project || !project.slides || project.slides.length === 0) {
@@ -7,7 +13,7 @@ export async function exportToPptx(project) {
   }
 
   const theme = getThemeById(project.themeId);
-  const colors = theme.pptx || {
+  const rawColors = theme.pptx || {
     bg: '0F172A',
     cardBg: '1E293B',
     primary: '6366F1',
@@ -17,8 +23,19 @@ export async function exportToPptx(project) {
     textSecondary: '94A3B8'
   };
 
+  const colors = {
+    bg: (rawColors.bg || '0F172A').replace(/#/g, ''),
+    cardBg: (rawColors.cardBg || '1E293B').replace(/#/g, ''),
+    primary: (rawColors.primary || '6366F1').replace(/#/g, ''),
+    secondary: (rawColors.secondary || '4338CA').replace(/#/g, ''),
+    accent: (rawColors.accent || '38BDF8').replace(/#/g, ''),
+    textPrimary: (rawColors.textPrimary || 'FFFFFF').replace(/#/g, ''),
+    textSecondary: (rawColors.textSecondary || '94A3B8').replace(/#/g, '')
+  };
+
   const pptx = new pptxgen();
-  pptx.layout = 'LAYOUT_16x9';
+  // Standard PowerPoint 16:9 Widescreen (13.333 x 7.5 inches)
+  pptx.layout = 'LAYOUT_WIDE';
   pptx.author = 'SlideGenius AI (Open Source)';
   pptx.company = 'SlideGenius Community';
   pptx.title = project.title;
@@ -28,43 +45,65 @@ export async function exportToPptx(project) {
     const sData = project.slides[i];
     const slide = pptx.addSlide();
 
-    // Background color
-    slide.background = { color: colors.bg };
+    // Background color (ensure clean 6-char hex without #)
+    const bgColor = (colors.bg || '0F172A').replace('#', '');
+    slide.background = { color: bgColor };
+
+    // Full Slide Background Image if enabled
+    if (sData.image && sData.imagePosition === 'background') {
+      try {
+        const imgProps = sData.image.startsWith('data:')
+          ? { data: sData.image, x: 0, y: 0, w: '100%', h: '100%' }
+          : { path: sData.image, x: 0, y: 0, w: '100%', h: '100%' };
+        slide.addImage(imgProps);
+
+        // Dark contrast overlay so text remains readable
+        slide.addShape(ShapeType.rect, {
+          x: 0,
+          y: 0,
+          w: '100%',
+          h: '100%',
+          fill: { color: '000000', transparency: 35 }
+        });
+      } catch (err) {
+        console.warn('Could not embed slide background image:', err);
+      }
+    }
 
     // Add speaker notes
     if (sData.notes) {
       slide.addNotes(sData.notes);
     }
 
-    // Top Accent line
-    slide.addShape(pptx.ShapeType.rect, {
+    // Top Accent line (across full 13.333" width)
+    slide.addShape(ShapeType.rect, {
       x: 0,
       y: 0,
       w: '100%',
-      h: 0.1,
-      fill: { color: colors.primary },
-      line: { color: colors.primary }
+      h: 0.08,
+      fill: { color: (colors.primary || '6366F1').replace('#', '') },
+      line: { color: (colors.primary || '6366F1').replace('#', '') }
     });
 
-    // Slide Number & Watermark-free footer
+    // Slide Number & Watermark-free footer (positioned comfortably inside 7.5" height)
     slide.addText(`Slide ${i + 1} of ${project.slides.length}`, {
       x: 0.8,
-      y: 7.0,
+      y: 6.85,
       w: 4.0,
-      h: 0.3,
+      h: 0.35,
       fontSize: 10,
-      color: colors.textSecondary,
+      color: (colors.textSecondary || '94A3B8').replace('#', ''),
       fontFace: 'Arial'
     });
 
-    slide.addText(`${project.title}`, {
+    slide.addText(`${project.title || ''}`, {
       x: 5.5,
-      y: 7.0,
+      y: 6.85,
       w: 7.0,
-      h: 0.3,
+      h: 0.35,
       fontSize: 10,
       align: 'right',
-      color: colors.textSecondary,
+      color: (colors.textSecondary || '94A3B8').replace('#', ''),
       fontFace: 'Arial'
     });
 
@@ -104,7 +143,7 @@ function sanitizeFilename(name) {
 function renderTitleSlide(slide, sData, colors, pptx) {
   // Category Badge
   if (sData.badge) {
-    slide.addShape(pptx.ShapeType.roundRect, {
+    slide.addShape(ShapeType.roundRect, {
       x: 1.0,
       y: 1.3,
       w: 2.2,
@@ -187,8 +226,35 @@ function renderSplitImageSlide(slide, sData, colors, pptx) {
     });
   }
 
-  // Right side visual box
-  slide.addShape(pptx.ShapeType.roundRect, {
+  // Right side visual box or embedded image
+  if (sData.image && sData.imagePosition !== 'background') {
+    try {
+      const imgProps = sData.image.startsWith('data:')
+        ? { data: sData.image, x: 8.0, y: 2.2, w: 4.5, h: 4.2 }
+        : { path: sData.image, x: 8.0, y: 2.2, w: 4.5, h: 4.2 };
+      slide.addImage(imgProps);
+
+      // Frame border around image
+      slide.addShape(ShapeType.roundRect, {
+        x: 8.0,
+        y: 2.2,
+        w: 4.5,
+        h: 4.2,
+        rectRadius: 0.12,
+        fill: { type: 'none' },
+        line: { color: colors.primary, width: 1.5 }
+      });
+    } catch (e) {
+      // Fallback to stylized vector card
+      renderFallbackCard(slide, sData, colors, pptx);
+    }
+  } else {
+    renderFallbackCard(slide, sData, colors, pptx);
+  }
+}
+
+function renderFallbackCard(slide, sData, colors, pptx) {
+  slide.addShape(ShapeType.roundRect, {
     x: 8.0,
     y: 2.2,
     w: 4.5,
@@ -239,7 +305,7 @@ function renderGrid3Slide(slide, sData, colors, pptx) {
     const x = startX + idx * (cardWidth + gap);
 
     // Card background
-    slide.addShape(pptx.ShapeType.roundRect, {
+    slide.addShape(ShapeType.roundRect, {
       x,
       y: 2.4,
       w: cardWidth,
@@ -302,7 +368,7 @@ function renderMetricsSlide(slide, sData, colors, pptx) {
   metrics.slice(0, 4).forEach((m, idx) => {
     const x = 0.8 + idx * (cardWidth + 0.4);
 
-    slide.addShape(pptx.ShapeType.roundRect, {
+    slide.addShape(ShapeType.roundRect, {
       x,
       y: 2.5,
       w: cardWidth,
@@ -359,7 +425,7 @@ function renderTwoColumnSlide(slide, sData, colors, pptx) {
   const h = 4.0;
 
   // Column 1 Box
-  slide.addShape(pptx.ShapeType.roundRect, {
+  slide.addShape(ShapeType.roundRect, {
     x: 0.8,
     y,
     w: colWidth,
@@ -394,7 +460,7 @@ function renderTwoColumnSlide(slide, sData, colors, pptx) {
   });
 
   // Column 2 Box
-  slide.addShape(pptx.ShapeType.roundRect, {
+  slide.addShape(ShapeType.roundRect, {
     x: 6.9,
     y,
     w: colWidth,

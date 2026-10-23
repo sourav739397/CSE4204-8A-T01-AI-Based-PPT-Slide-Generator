@@ -1,8 +1,23 @@
 import React from 'react';
 import { getThemeById } from '../services/themeService';
-import { Sparkles, CheckCircle2, TrendingUp, Compass, Flag, Image as ImageIcon } from 'lucide-react';
+import {
+  Sparkles,
+  CheckCircle2,
+  TrendingUp,
+  Compass,
+  Flag,
+  Image as ImageIcon,
+  Trash2,
+  Wand2
+} from 'lucide-react';
 
-export default function SlideCanvas({ slide, themeId, readOnly = false, onUpdateSlide }) {
+export default function SlideCanvas({
+  slide,
+  themeId,
+  readOnly = false,
+  onUpdateSlide,
+  onOpenImageModal
+}) {
   if (!slide) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-slate-900 text-slate-500 text-sm">
@@ -61,9 +76,22 @@ export default function SlideCanvas({ slide, themeId, readOnly = false, onUpdate
         fontFamily: 'Inter, sans-serif',
       }}
     >
+      {/* Background Image Layer if enabled */}
+      {slide.image && slide.imagePosition === 'background' && (
+        <>
+          <div
+            className="absolute inset-0 z-0 bg-cover bg-center transition-all duration-700"
+            style={{ backgroundImage: `url(${slide.image})` }}
+          />
+          <div
+            className="absolute inset-0 z-0 bg-slate-950/85 backdrop-blur-[1px]"
+          />
+        </>
+      )}
+
       {/* Top Accent Line */}
       <div
-        className="absolute top-0 left-0 right-0 h-1.5"
+        className="absolute top-0 left-0 right-0 h-1.5 z-10"
         style={{ backgroundColor: colors.primary }}
       />
 
@@ -87,8 +115,50 @@ export default function SlideCanvas({ slide, themeId, readOnly = false, onUpdate
           )}
         </div>
 
-        <div className="text-[11px] font-mono opacity-60">
-          Slide {slide.slideNo}
+        {/* Right side: Image Action Button & Slide Number */}
+        <div className="flex items-center gap-2">
+          {!readOnly && onOpenImageModal && (
+            slide.image ? (
+              <div className="flex items-center gap-1 bg-slate-900/90 px-2 py-0.5 rounded-md border border-slate-700 shadow-xs">
+                <button
+                  type="button"
+                  onClick={onOpenImageModal}
+                  className="flex items-center gap-1 text-[11px] font-semibold text-brand-300 hover:text-white transition-colors"
+                  title="Edit, Replace or Regenerate Slide Image"
+                >
+                  <ImageIcon className="w-3 h-3 text-brand-400" />
+                  <span>Image Active</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (window.confirm('Remove image from this slide?')) {
+                      onUpdateSlide({ ...slide, image: '' });
+                    }
+                  }}
+                  className="p-0.5 text-slate-400 hover:text-rose-400 transition-colors"
+                  title="Remove Image"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={onOpenImageModal}
+                className="flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-slate-900/90 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition-colors shadow-xs"
+                title="Add, Upload, or Generate AI Image"
+              >
+                <Sparkles className="w-3 h-3 text-brand-400" />
+                <span>+ Add / AI Image</span>
+              </button>
+            )
+          )}
+
+          <div className="text-[11px] font-mono opacity-60">
+            Slide {slide.slideNo}
+          </div>
         </div>
       </div>
 
@@ -194,22 +264,68 @@ export default function SlideCanvas({ slide, themeId, readOnly = false, onUpdate
             </div>
 
             <div className="md:col-span-5 h-full flex items-center justify-center">
-              <div
-                className="w-full h-48 sm:h-64 rounded-2xl overflow-hidden border shadow-lg relative group"
-                style={{ borderColor: colors.border }}
-              >
-                <img
-                  src={slide.image || 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&auto=format&fit=crop&q=80'}
-                  alt={slide.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                <div className="absolute bottom-3 left-3 right-3 text-white">
-                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-black/50 backdrop-blur-xs">
-                    Key Visual
-                  </span>
+              {slide.image ? (
+                <div
+                  className="w-full h-48 sm:h-64 rounded-2xl overflow-hidden border shadow-lg relative group cursor-pointer"
+                  style={{ borderColor: colors.border }}
+                  onClick={!readOnly && onOpenImageModal ? onOpenImageModal : undefined}
+                >
+                  <img
+                    src={slide.image}
+                    alt={slide.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+
+                  {/* Hover Quick Action Buttons */}
+                  {!readOnly && onOpenImageModal && (
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 p-2 backdrop-blur-xs">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onOpenImageModal();
+                        }}
+                        className="px-2.5 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-[11px] font-bold shadow-md flex items-center gap-1 transition-transform hover:scale-105"
+                      >
+                        <Wand2 className="w-3 h-3" />
+                        <span>Change / AI</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onUpdateSlide({ ...slide, image: '' });
+                        }}
+                        className="p-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-bold shadow-md transition-transform hover:scale-105"
+                        title="Remove Image"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="absolute bottom-3 left-3 right-3 text-white pointer-events-none">
+                    <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-black/50 backdrop-blur-xs">
+                      Key Visual
+                    </span>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div
+                  onClick={!readOnly && onOpenImageModal ? onOpenImageModal : undefined}
+                  className="w-full h-48 sm:h-64 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-2 text-center p-4 cursor-pointer hover:border-brand-500 hover:bg-brand-500/5 transition-all group"
+                  style={{ borderColor: colors.border }}
+                >
+                  <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-brand-400 group-hover:scale-110 transition-transform">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-white block">No Image Selected</span>
+                    <span className="text-[11px] text-slate-400 block mt-0.5">Click to generate with AI or add image</span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

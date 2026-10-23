@@ -161,7 +161,7 @@ const INITIAL_PROJECTS = [
   }
 ];
 
-export function getProjects() {
+export function getAllRawProjects() {
   try {
     const raw = localStorage.getItem(PROJECTS_KEY);
     if (!raw) {
@@ -176,16 +176,46 @@ export function getProjects() {
   }
 }
 
-export function getProjectById(id) {
-  const projects = getProjects();
-  return projects.find(p => p.id === id) || null;
+export function getProjects(userId = null) {
+  const allProjects = getAllRawProjects();
+  if (!userId) {
+    return allProjects;
+  }
+
+  // Filter projects for this user, or unassigned legacy projects
+  let userProjects = allProjects.filter(p => p.userId === userId || !p.userId);
+
+  // If this user has no projects yet, generate a starter presentation for them
+  if (userProjects.length === 0) {
+    const userStarter = {
+      ...INITIAL_PROJECTS[0],
+      id: 'proj-welcome-' + userId.replace(/[^a-zA-Z0-9]/g, '').slice(-6),
+      userId,
+      title: 'Welcome to SlideGenius: AI Presentation Tour',
+      topic: 'Getting started with AI presentation generation, slide editing, and PPTX export.',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    const updated = [userStarter, ...allProjects];
+    localStorage.setItem(PROJECTS_KEY, JSON.stringify(updated));
+    return [userStarter];
+  }
+
+  return userProjects;
 }
 
-export function saveProject(project) {
-  const projects = getProjects();
+export function getProjectById(id, userId = null) {
+  const projects = getAllRawProjects();
+  const proj = projects.find(p => p.id === id);
+  return proj || null;
+}
+
+export function saveProject(project, userId = null) {
+  const projects = getAllRawProjects();
   const index = projects.findIndex(p => p.id === project.id);
   const updated = {
     ...project,
+    userId: userId || project.userId || 'guest',
     updatedAt: new Date().toISOString()
   };
 
@@ -201,34 +231,46 @@ export function saveProject(project) {
   return updated;
 }
 
-export function deleteProject(id) {
-  const projects = getProjects();
+export function deleteProject(id, userId = null) {
+  const projects = getAllRawProjects();
   const filtered = projects.filter(p => p.id !== id);
   localStorage.setItem(PROJECTS_KEY, JSON.stringify(filtered));
-  return filtered;
+  return userId ? filtered.filter(p => p.userId === userId) : filtered;
 }
 
-export function duplicateProject(id) {
+export function duplicateProject(id, userId = null) {
   const project = getProjectById(id);
   if (!project) return null;
 
   const duplicated = {
     ...project,
     id: 'proj-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7),
+    userId: userId || project.userId || 'guest',
     title: `${project.title} (Copy)`,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };
 
-  return saveProject(duplicated);
+  return saveProject(duplicated, duplicated.userId);
+}
+
+export function getUserStats(userId) {
+  const projects = getProjects(userId);
+  const totalSlides = projects.reduce((acc, p) => acc + (p.slides?.length || 0), 0);
+  return {
+    totalProjects: projects.length,
+    totalSlides,
+    lastActive: projects[0]?.updatedAt || new Date().toISOString()
+  };
 }
 
 export function getSettings() {
+  const envKey = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GEMINI_API_KEY) || '';
   try {
     const raw = localStorage.getItem(SETTINGS_KEY);
     if (!raw) {
       const defaultSettings = {
-        geminiApiKey: '',
+        geminiApiKey: envKey,
         model: 'gemini-3-flash-preview',
         useMockFallback: true,
         autoSave: true
@@ -237,8 +279,8 @@ export function getSettings() {
       return defaultSettings;
     }
     const parsed = JSON.parse(raw);
-    if (!parsed.geminiApiKey) {
-      parsed.geminiApiKey = '';
+    if (!parsed.geminiApiKey && envKey) {
+      parsed.geminiApiKey = envKey;
     }
     if (!parsed.model || parsed.model === 'gemini-1.5-flash' || parsed.model === 'gemini-2.0-flash') {
       parsed.model = 'gemini-3-flash-preview';
@@ -246,7 +288,7 @@ export function getSettings() {
     return parsed;
   } catch (e) {
     return {
-      geminiApiKey: '',
+      geminiApiKey: envKey,
       model: 'gemini-3-flash-preview',
       useMockFallback: true,
       autoSave: true
@@ -257,3 +299,4 @@ export function getSettings() {
 export function saveSettings(settings) {
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
 }
+

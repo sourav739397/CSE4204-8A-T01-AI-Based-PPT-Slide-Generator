@@ -16,24 +16,29 @@ import {
   CheckCircle2,
   Layers,
   Wand2,
-  Save
+  Save,
+  Image as ImageIcon
 } from 'lucide-react';
 import { getProjectById, saveProject } from '../services/storageService';
 import { exportToPptx } from '../services/pptxExportService';
 import { getThemeById, SLIDE_THEMES } from '../services/themeService';
+import { useAuth } from '../context/AuthContext';
 import SlideCanvas from '../components/SlideCanvas';
 import LayoutSelector from '../components/LayoutSelector';
 import InlineAiModal from '../components/InlineAiModal';
+import ImageManagerModal from '../components/ImageManagerModal';
 import PresentationModal from '../components/PresentationModal';
 import confetti from 'canvas-confetti';
 
 export default function EditorPage() {
   const { projectId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [project, setProject] = useState(null);
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
   const [showAiModal, setShowAiModal] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
   const [showPresentation, setShowPresentation] = useState(false);
   const [showNotesDrawer, setShowNotesDrawer] = useState(true);
   const [showThemePicker, setShowThemePicker] = useState(false);
@@ -58,7 +63,7 @@ export default function EditorPage() {
   const updateProjectState = (updatedProject) => {
     setProject(updatedProject);
     setSaveStatus('Saving...');
-    saveProject(updatedProject);
+    saveProject(updatedProject, user?.id || updatedProject.userId);
     setTimeout(() => setSaveStatus('Saved'), 400);
   };
 
@@ -75,6 +80,22 @@ export default function EditorPage() {
     handleUpdateSlide({
       ...activeSlide,
       layout: layoutId
+    });
+  };
+
+  const handleSaveSlideImage = (imageUrl, position = 'card') => {
+    handleUpdateSlide({
+      ...activeSlide,
+      image: imageUrl,
+      imagePosition: position
+    });
+  };
+
+  const handleRemoveSlideImage = () => {
+    handleUpdateSlide({
+      ...activeSlide,
+      image: '',
+      imagePosition: 'card'
     });
   };
 
@@ -255,6 +276,20 @@ export default function EditorPage() {
             )}
           </div>
 
+          {/* Slide Image Manager Button */}
+          <button
+            onClick={() => setShowImageModal(true)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
+              activeSlide.image
+                ? 'bg-cyan-950/40 border-cyan-500/40 text-cyan-300 hover:bg-cyan-900/50'
+                : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-200'
+            }`}
+            title="Add, Edit, Replace, or Generate AI Image for this slide"
+          >
+            <ImageIcon className="w-3.5 h-3.5 text-cyan-400" />
+            <span className="hidden sm:inline">{activeSlide.image ? 'Edit Image' : '+ Image'}</span>
+          </button>
+
           {/* AI Slide Copilot Button */}
           <button
             onClick={() => setShowAiModal(true)}
@@ -418,6 +453,7 @@ export default function EditorPage() {
                 themeId={project.themeId}
                 readOnly={false}
                 onUpdateSlide={handleUpdateSlide}
+                onOpenImageModal={() => setShowImageModal(true)}
               />
             </div>
           </div>
@@ -449,6 +485,16 @@ export default function EditorPage() {
           </div>
         </div>
       </div>
+
+      {/* Slide Image Manager Modal (AI, Stock, URL, Upload) */}
+      {showImageModal && (
+        <ImageManagerModal
+          slide={activeSlide}
+          onClose={() => setShowImageModal(false)}
+          onSaveImage={handleSaveSlideImage}
+          onRemoveImage={handleRemoveSlideImage}
+        />
+      )}
 
       {/* AI Inline Copilot Modal */}
       {showAiModal && (

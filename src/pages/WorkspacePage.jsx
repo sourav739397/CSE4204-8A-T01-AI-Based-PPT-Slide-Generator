@@ -19,6 +19,7 @@ import {
 import { getProjects, saveProject, deleteProject, duplicateProject } from '../services/storageService';
 import { exportToPptx } from '../services/pptxExportService';
 import { getThemeById } from '../services/themeService';
+import { useAuth } from '../context/AuthContext';
 import PresentationModal from '../components/PresentationModal';
 import confetti from 'canvas-confetti';
 
@@ -34,6 +35,7 @@ const PRESET_TOPICS = [
 export default function WorkspacePage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { user, isAuthenticated } = useAuth();
   const [projects, setProjects] = useState([]);
   const [topic, setTopic] = useState('');
   const [slideCount, setSlideCount] = useState(5);
@@ -42,12 +44,12 @@ export default function WorkspacePage() {
   const [exportingId, setExportingId] = useState(null);
 
   useEffect(() => {
-    setProjects(getProjects());
+    setProjects(getProjects(user?.id));
     const initialTopic = searchParams.get('initialTopic');
     if (initialTopic) {
       setTopic(initialTopic);
     }
-  }, [searchParams]);
+  }, [searchParams, user]);
 
   const handleCreateOutline = (e) => {
     e.preventDefault();
@@ -72,16 +74,16 @@ export default function WorkspacePage() {
   const handleDelete = (e, id) => {
     e.stopPropagation();
     if (window.confirm('Are you sure you want to delete this presentation?')) {
-      const updated = deleteProject(id);
+      const updated = deleteProject(id, user?.id);
       setProjects(updated);
     }
   };
 
   const handleDuplicate = (e, id) => {
     e.stopPropagation();
-    const dup = duplicateProject(id);
+    const dup = duplicateProject(id, user?.id);
     if (dup) {
-      setProjects(getProjects());
+      setProjects(getProjects(user?.id));
     }
   };
 
@@ -118,6 +120,50 @@ export default function WorkspacePage() {
           </div>
         </div>
       </div>
+
+      {/* User Account Banner */}
+      {isAuthenticated && user ? (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 px-4 rounded-xl bg-slate-900/60 border border-slate-800/90 text-xs text-slate-300">
+          <div className="flex items-center gap-2.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span>
+              Signed in as <strong className="text-white">{user.name}</strong> ({user.email})
+            </span>
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-brand-500/15 text-brand-300 border border-brand-500/25">
+              {user.role || 'Creator'}
+            </span>
+          </div>
+          <Link
+            to="/profile"
+            className="text-brand-400 hover:text-brand-300 font-medium transition-colors"
+          >
+            Manage Profile & Settings →
+          </Link>
+        </div>
+      ) : (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 px-4 rounded-xl bg-indigo-950/25 border border-indigo-500/20 text-xs text-slate-300">
+          <div className="flex items-center gap-2.5">
+            <Sparkles className="w-4 h-4 text-brand-400 shrink-0" />
+            <span>
+              Using Guest Mode. <strong className="text-white">Sign in or create a free account</strong> to save and access your presentations from anywhere.
+            </span>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Link
+              to="/login"
+              className="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-semibold transition-colors"
+            >
+              Sign In
+            </Link>
+            <Link
+              to="/signup"
+              className="px-3 py-1 rounded-lg bg-brand-600 hover:bg-brand-500 text-white font-semibold transition-colors"
+            >
+              Sign Up
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Generator Prompt Box */}
       <div className="p-6 rounded-2xl bg-gradient-to-br from-slate-900/90 via-slate-900/60 to-brand-950/30 border border-brand-500/20 shadow-xl relative overflow-hidden">

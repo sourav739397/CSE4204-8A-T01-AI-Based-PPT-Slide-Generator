@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { generateOutline, generateSlidesFromOutline } from '../services/aiService';
 import { getProjectById, saveProject } from '../services/storageService';
+import { useAuth } from '../context/AuthContext';
 import ThemeSelector from '../components/ThemeSelector';
 import confetti from 'canvas-confetti';
 
@@ -22,6 +23,7 @@ export default function OutlinePage() {
   const { projectId } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const topicFromQuery = searchParams.get('topic') || '';
   const slidesCountFromQuery = Number(searchParams.get('slides') || 5);
@@ -135,7 +137,7 @@ export default function OutlinePage() {
         updatedAt: new Date().toISOString()
       };
 
-      saveProject(projectData);
+      saveProject(projectData, user?.id);
       confetti({ particleCount: 70, spread: 70, origin: { y: 0.6 } });
 
       setTimeout(() => {

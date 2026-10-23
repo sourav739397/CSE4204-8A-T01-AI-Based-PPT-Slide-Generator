@@ -279,12 +279,20 @@ export default function LandingPage() {
             <p className="text-xs sm:text-sm text-slate-300 max-w-xl mx-auto">
               Start generating for free right now. No sign up or API key required to test out the generator.
             </p>
-            <button
-              onClick={() => navigate('/workspace')}
-              className="px-6 py-3 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold text-xs shadow-lg shadow-brand-500/30 inline-flex items-center gap-2 transition-all hover:scale-105 active:scale-95"
-            >
-              <Sparkles className="w-4 h-4" /> Go to Workspace
-            </button>
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+              <button
+                onClick={() => navigate('/workspace')}
+                className="px-6 py-3 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold text-xs shadow-lg shadow-brand-500/30 inline-flex items-center gap-2 transition-all hover:scale-105 active:scale-95"
+              >
+                <Sparkles className="w-4 h-4" /> Go to Workspace
+              </button>
+              <button
+                onClick={() => navigate('/signup')}
+                className="px-6 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs border border-slate-700/80 inline-flex items-center gap-2 transition-all hover:scale-105 active:scale-95"
+              >
+                Create Free Account →
+              </button>
+            </div>
           </div>
         </div>
       </section>
